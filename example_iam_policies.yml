@@ -1,0 +1,92 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  AnlystIAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "analyst-example-policy"
+      Path: "/SecurityIAMCourse2/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Sid: S3AnalystGetObjectsByRole
+              Effect: Allow
+              Action:
+                - "s3:ListObjects"
+                - "s3:ListObjectsV2"
+                - "s3:GetObject"
+                - "s3:GetObjects"
+              Resource:
+                - !Sub 'arn:aws:s3:::shared-bucket-123/*'
+              Condition:
+                StringEquals:
+                  s3:ExistingObjectTag/Role: "analyst"
+            - Sid: S3AnalystUploadObjectsByRole
+              Effect: Allow
+              Action:
+                - "s3:PutObject*"
+              Resource:
+                - !Sub 'arn:aws:s3:::shared-bucket-123/*'
+              Condition:
+                StringEquals:
+                  s3:RequestObjectTag/Role: "analyst"
+
+  DeveloperIAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: "/SecurityIAMCourse2/"
+      ManagedPolicyName: "developer-example-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: S3DeveloperGetObjectsByRole
+            Effect: Allow
+            Action:
+              - "s3:ListObjects"
+              - "s3:ListObjectsV2"
+              - "s3:GetObject"
+              - "s3:GetObjects"
+            Resource:
+              - !Sub 'arn:aws:s3:::shared-bucket-123/*'
+            Condition:
+              StringEquals:
+                s3:ExistingObjectTag/Role: "developer"
+          - Sid: S3DeveloperUploadObjectsByRole
+            Effect: Allow
+            Action:
+              - "s3:PutObject*"
+            Resource:
+              - !Sub 'arn:aws:s3:::lshared-bucket-123/*'
+            Condition:
+              StringEquals:
+                s3:RequestObjectTag/Role: "developer"
+
+  RestrictionsIAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: "/SecurityIAMCourse2/"
+      ManagedPolicyName: "enterprise-restrictions-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "DenyAllOutsideRequestedRegions"
+            Effect: Deny
+            NotAction:
+              - "cloudfront:*"
+              - "iam:*"
+              - "route53:*"
+              - "support:*"
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                aws:RequestedRegion:
+                  - "us-east-1"
+                  - "us-east-2"
+                  - "us-west-1"
+                  - "us-west-2"
+          - Sid: "DenyS3Resources"
+            Effect: Deny
+            Resource:
+              - "arn:aws:s3:::*"
+            Action:
+              - "s3:*"
